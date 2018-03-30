@@ -31,6 +31,18 @@ const double acc_constraint = 1.0; // Constraint for acceleration
 const ulong n_input_params = 6;
 const ulong n_actuators = 2;
 
+
+// Weights for the cost calculation
+const int cte_cost_weight = 2000;
+const int epsi_cost_weight = 2000;
+const int v_cost_weight = 1;
+const int delta_cost_weight = 10;
+const int a_cost_weight = 10;
+const int delta_change_cost_weight = 100;
+const int jerk_cost_weight = 10;
+
+const int ref_v = 24; // 8 m/s is about 30 km/h
+
 // This value assumes the model presented in the classroom is used.
 //
 // It was obtained by measuring the radius formed by running the vehicle in the
@@ -51,11 +63,68 @@ class FG_eval {
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
-    // TODO: implement MPC
-    // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
-  }
+
+      for (int i = 0; i < N; i++) {
+        fg[0] += cte_cost_weight * CppAD::pow(vars[cte_offs + i], 2);
+        fg[0] += epsi_cost_weight * CppAD::pow(vars[epsi_offs + i], 2);
+        fg[0] += v_cost_weight * CppAD::pow(vars[v_offs + i] - ref_v, 2);
+      }
+
+
+      for (int i = 0; i < N-1; i++) {
+        fg[0] += delta_cost_weight * CppAD::pow(vars[d1_offs + i], 2);
+        fg[0] += a_cost_weight * CppAD::pow(vars[a_offs + i], 2);
+      }
+
+
+      for (int i = 0; i < N-2; i++) {
+        fg[0] += delta_change_cost_weight * CppAD::pow(vars[d1_offs + i + 1] - vars[d1_offs + i], 2);
+        fg[0] += jerk_cost_weight * CppAD::pow(vars[a_offs + i + 1] - vars[a_offs + i], 2);
+      }
+
+
+      fg[1 + x_offs] = vars[x_offs];
+      fg[1 + y_offs] = vars[y_offs];
+      fg[1 + psi_offs] = vars[psi_offs];
+      fg[1 + v_offs] = vars[v_offs];
+      fg[1 + cte_offs] = vars[cte_offs];
+      fg[1 + epsi_offs] = vars[epsi_offs];
+
+      // The rest of the constraints
+      for (int t = 1; t < N; t++) {
+        // State at time t + 1
+        AD<double> x1 = vars[x_offs + t];
+        AD<double> y1 = vars[y_offs + t];
+        AD<double> psi1 = vars[psi_offs + t];
+        AD<double> v1 = vars[v_offs + t];
+        AD<double> cte1 = vars[cte_offs + t];
+        AD<double> epsi1 = vars[epsi_offs + t];
+
+        // State at time t
+        AD<double> x0 = vars[x_offs + t - 1];
+        AD<double> y0 = vars[y_offs + t - 1];
+        AD<double> psi0 = vars[psi_offs + t - 1];
+        AD<double> v0 = vars[v_offs + t - 1];
+        AD<double> cte0 = vars[cte_offs + t - 1];
+        AD<double> epsi0 = vars[epsi_offs + t - 1];
+
+        // Actuator constraints at time t only
+        AD<double> delta0 = vars[d1_offs + t - 1];
+        AD<double> a0 = vars[a_offs + t - 1];
+
+        AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * pow(x0, 2) + coeffs[3] * pow(x0, 3);
+        AD<double> psi_des0 = CppAD::atan(coeffs[1] + 2*coeffs[2]*x0 + 3*coeffs[3]*pow(x0,2));
+
+        // Setting up the rest of the model constraints
+        fg[1 + x_offs + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+        fg[1 + y_offs + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
+        fg[1 + psi_offs + t] = psi1 - (psi0 - v0 * delta0 / Lf * dt);
+        fg[1 + v_offs + t] = v1 - (v0 + a0 * dt);
+        fg[1 + cte_offs + t] = cte1 - ((f0-y0) + (v0 * CppAD::sin(epsi0) * dt));
+        fg[1 + epsi_offs + t] = epsi1 - ((psi0 - psi_des0) - v0 * delta0 / Lf * dt);
+        }
+    }
+
 };
 
 //

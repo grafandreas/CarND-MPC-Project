@@ -17,6 +17,13 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+
+// Constants
+
+const double show_waypoint_res = 2;
+const int num_show_waypoint = 30;
+
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -92,14 +99,44 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+          vector<double> waypoints_x;
+          vector<double> waypoints_y;
+
+          // Transform Waypoints to car coordination system
+          //
+          for (int i = 0; i < ptsx.size(); i++) {
+              double dx = ptsx[i] - px;
+              double dy = ptsy[i] - py;
+              waypoints_x.push_back(dx * cos(psi) + dy * sin(psi));
+              waypoints_y.push_back(dy * cos(psi) - dx * sin(psi));
+          }
+
           /*
-          * TODO: Calculate steering angle and throttle using MPC.
+          *
+          * : Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
           double steer_value;
           double throttle_value;
+
+          double* ptrx = &waypoints_x[0];
+          double* ptry = &waypoints_y[0];
+          Eigen::Map<Eigen::VectorXd> waypoints_x_eig(ptrx, 6);
+          Eigen::Map<Eigen::VectorXd> waypoints_y_eig(ptry, 6);
+
+          auto coeffs = polyfit(waypoints_x_eig, waypoints_y_eig, 3);
+          double cte = polyeval(coeffs, 0);  // px = 0, py = 0
+          double epsi = -atan(coeffs[1]);  // p
+
+          Eigen::VectorXd state(6);
+          state << 0, 0, 0, v, cte, epsi;
+          auto vars = mpc.Solve(state, coeffs);
+          steer_value = vars[0];
+          throttle_value = vars[1];
+
+          steer_value = steer_value/deg2rad(25);
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
@@ -111,9 +148,14 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Green line
-
+          for (int i = 2; i < vars.size(); i ++) {
+             if (i%2 == 0) {
+               mpc_x_vals.push_back(vars[i]);
+             }
+             else {
+               mpc_y_vals.push_back(vars[i]);
+             }
+            }
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
@@ -123,6 +165,13 @@ int main() {
 
           //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
           // the points in the simulator are connected by a Yellow line
+
+
+
+        for (int i = 1; i < num_show_waypoint; i++) {
+             next_x_vals.push_back(show_waypoint_res * i);
+             next_y_vals.push_back(polyeval(coeffs, show_waypoint_res * i));
+         }
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
@@ -139,7 +188,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+     //     this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
