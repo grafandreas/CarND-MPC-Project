@@ -51,7 +51,7 @@ const int jerk_cost_weight = 10;
 
 
 
-const int ref_v = 8; // 8 m/s is about 30 km/h
+const int ref_v = 15; // 8 m/s is about 30 km/h
 
 // This value assumes the model presented in the classroom is used.
 //
