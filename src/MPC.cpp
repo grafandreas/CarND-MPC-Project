@@ -12,8 +12,8 @@ using CppAD::AD;
 // and size_t is the sizeof an object, not an offset;
 //
 typedef unsigned long  ulong;
-ulong const N = 10;       // Initial experimental value
-double const  dt = 0.1;    // Initial experimental value
+ulong  N = 10;       // Initial experimental value
+double const  dt = 0.2;    // Initial experimental value
 
 const ulong x_offs = 0;
 const ulong y_offs = x_offs + N;
@@ -153,6 +153,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // calculate constants
   // Refactored to not use any hard coded constants.
   //
+  cout << "NNNNNNNNN " << N << endl;
+
   ulong const n_vars = (n_input_params*N)+n_actuators*(N-1);
   ulong const n_constraints = n_input_params*N;
 

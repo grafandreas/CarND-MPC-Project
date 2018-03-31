@@ -9,7 +9,7 @@
 #include "MPC.h"
 #include "json.hpp"
 #include <chrono>
-
+#include <string>
 // for convenience
 using json = nlohmann::json;
 using namespace std::chrono;
@@ -27,8 +27,8 @@ const double speed_to_m_per_s_factor = 0.44704;
 const double show_waypoint_res = 2;
 const int num_show_waypoint = 30;
 
-const int latency_in_ms = 100;
-const double latency_in_s = (latency_in_ms) / 1000.0;
+int latency_in_ms = 100;
+double latency_in_s = (latency_in_ms) / 1000.0;
 
 const double max_steer_angle = 25;
 
@@ -81,7 +81,34 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
-int main() {
+double cl_double(char * param, int argc, char * argv[], const double def) {
+    for(int i = 0; i < argc; i++) {
+        if(strcmp(param,argv[i])==0) {
+            return stod(argv[i+1]);
+        }
+    }
+    return def;
+}
+
+
+int cl_int(char * param, int argc, char * argv[], const int def) {
+    for(int i = 0; i < argc; i++) {
+        if(strcmp(param,argv[i])==0) {
+            return stoi(argv[i+1]);
+        }
+    }
+    return def;
+}
+
+typedef unsigned long  ulong;
+extern ulong N;
+
+int main(int argc, char*argv[]) {
+
+  latency_in_ms = cl_int("--latency",argc,argv,100);
+  latency_in_s = (latency_in_ms) / 1000.0;
+
+//  N= cl_int("--N",argc,argv,10);
   uWS::Hub h;
 
   // MPC is initialized here!
@@ -226,7 +253,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-
+          cout << "Latency " << latency_in_s << endl;
           this_thread::sleep_for(chrono::milliseconds(latency_in_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
