@@ -33,15 +33,25 @@ const ulong n_actuators = 2;
 
 
 // Weights for the cost calculation
+//const int cte_cost_weight = 2000;
+//const int epsi_cost_weight = 2000;
+//const int v_cost_weight = 1;
+//const int delta_cost_weight = 10;
+//const int a_cost_weight = 10;
+//const int delta_change_cost_weight = 100;
+//const int jerk_cost_weight = 10;
+
 const int cte_cost_weight = 2000;
 const int epsi_cost_weight = 2000;
 const int v_cost_weight = 1;
-const int delta_cost_weight = 10;
-const int a_cost_weight = 10;
-const int delta_change_cost_weight = 100;
+const int delta_cost_weight = 5; // Inspired by Udacity video
+const int a_cost_weight = 5;
+const int delta_change_cost_weight = 100; // Was 200000
 const int jerk_cost_weight = 10;
 
-const int ref_v = 24; // 8 m/s is about 30 km/h
+
+
+const int ref_v = 8; // 8 m/s is about 30 km/h
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -64,8 +74,9 @@ class FG_eval {
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
 
+        // AGR check
       for (int i = 0; i < N; i++) {
-        fg[0] += cte_cost_weight * CppAD::pow(vars[cte_offs + i], 2);
+        fg[0] += cte_cost_weight * CppAD::pow(vars[cte_offs + i], 2);  // Q&A has ref_cte
         fg[0] += epsi_cost_weight * CppAD::pow(vars[epsi_offs + i], 2);
         fg[0] += v_cost_weight * CppAD::pow(vars[v_offs + i] - ref_v, 2);
       }
@@ -100,7 +111,7 @@ class FG_eval {
         AD<double> cte1 = vars[cte_offs + t];
         AD<double> epsi1 = vars[epsi_offs + t];
 
-        // State at time t
+        // State at next time
         AD<double> x0 = vars[x_offs + t - 1];
         AD<double> y0 = vars[y_offs + t - 1];
         AD<double> psi0 = vars[psi_offs + t - 1];
@@ -108,12 +119,13 @@ class FG_eval {
         AD<double> cte0 = vars[cte_offs + t - 1];
         AD<double> epsi0 = vars[epsi_offs + t - 1];
 
-        // Actuator constraints at time t only
+        // Actuator constraints
         AD<double> delta0 = vars[d1_offs + t - 1];
         AD<double> a0 = vars[a_offs + t - 1];
 
-        AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * pow(x0, 2) + coeffs[3] * pow(x0, 3);
-        AD<double> psi_des0 = CppAD::atan(coeffs[1] + 2*coeffs[2]*x0 + 3*coeffs[3]*pow(x0,2));
+            // AG TODo: Check QA video does not use pwo
+        AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * x0*x0 + coeffs[3] * x0*x0*x0; // Had POW here, probalby wrong pow?
+        AD<double> psi_des0 = CppAD::atan(coeffs[1] + 2*coeffs[2]*x0 + 3*coeffs[3]*x0*x0);
 
         // Setting up the rest of the model constraints
         fg[1 + x_offs + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
@@ -172,7 +184,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // The upper and lower limits of delta are set to -25 and 25
   // (Values taken from the project lesson)
   for (unsigned int i = d1_offs; i < a_offs; i++) {
-    vars_lowerbound[i] = - angle_constraint;
+    vars_lowerbound[i] = - angle_constraint ; // Experimental: this is from the Q&A
     vars_upperbound[i] = angle_constraint;
   }
 

@@ -8,9 +8,11 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "MPC.h"
 #include "json.hpp"
+#include <chrono>
 
 // for convenience
 using json = nlohmann::json;
+using namespace std::chrono;
 
 // For converting back and forth between radians and degrees.
 constexpr double pi() { return M_PI; }
@@ -20,8 +22,15 @@ double rad2deg(double x) { return x * 180 / pi(); }
 
 // Constants
 
+const double speed_to_m_per_s_factor = 0.44704;
+
 const double show_waypoint_res = 2;
 const int num_show_waypoint = 30;
+
+const int latency_in_ms = 100;
+const double latency_in_s = (latency_in_ms) / 1000.0;
+
+const double max_steer_angle = 25;
 
 
 // Checks if the SocketIO event has JSON data.
@@ -85,6 +94,12 @@ int main() {
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
     cout << sdata << endl;
+    milliseconds ms = duration_cast< milliseconds >(
+        system_clock::now().time_since_epoch()
+    );
+
+    cout  << ms.count() << endl;
+
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -98,6 +113,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          v = v* speed_to_m_per_s_factor;
+
 
           vector<double> waypoints_x;
           vector<double> waypoints_y;
@@ -131,13 +148,29 @@ int main() {
           double epsi = -atan(coeffs[1]);  // p
 
           Eigen::VectorXd state(6);
+#if 1
+
+          double sa = j[1]["steering_angle"];
+          double th = j[1]["throttle"];
+          const double Lf = 2.67;
+          const double px_act = v * latency_in_s;
+          const double py_act = 0;
+          const double psi_act = - v * sa * latency_in_s / Lf;
+          const double v_act = v + th * latency_in_s;
+          const double cte_act = cte + v * sin(epsi) * latency_in_s;
+          const double epsi_act = epsi + psi_act;
+
+          state << px_act, py_act, psi_act, v_act, cte_act, epsi_act;
+#else
           state << 0, 0, 0, v, cte, epsi;
+#endif
           auto vars = mpc.Solve(state, coeffs);
           steer_value = vars[0];
           throttle_value = vars[1];
 
-          steer_value = steer_value/deg2rad(25);
-
+          cout << "STV " << steer_value << endl;
+          steer_value = steer_value/deg2rad(max_steer_angle);
+             cout << "STV " << steer_value << endl;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -168,9 +201,14 @@ int main() {
 
 
 
-        for (int i = 1; i < num_show_waypoint; i++) {
-             next_x_vals.push_back(show_waypoint_res * i);
-             next_y_vals.push_back(polyeval(coeffs, show_waypoint_res * i));
+//        for (int i = 1; i < num_show_waypoint; i++) {
+//             next_x_vals.push_back(show_waypoint_res * i);
+//             next_y_vals.push_back(polyeval(coeffs, show_waypoint_res * i));
+//         }
+
+        for (int i = 1; i < waypoints_x.size(); i++) {
+             next_x_vals.push_back(waypoints_x.at(i));
+             next_y_vals.push_back(waypoints_y.at(i));
          }
 
           msgJson["next_x"] = next_x_vals;
@@ -178,7 +216,7 @@ int main() {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          std::cout << "-> " << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -188,7 +226,8 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-     //     this_thread::sleep_for(chrono::milliseconds(100));
+
+          this_thread::sleep_for(chrono::milliseconds(latency_in_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
