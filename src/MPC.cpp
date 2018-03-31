@@ -13,7 +13,7 @@ using CppAD::AD;
 //
 typedef unsigned long  ulong;
 ulong  N = 10;       // Initial experimental value
-double const  dt = 0.2;    // Initial experimental value
+double const  dt = 0.4;    // Initial experimental value
 
 const ulong x_offs = 0;
 const ulong y_offs = x_offs + N;

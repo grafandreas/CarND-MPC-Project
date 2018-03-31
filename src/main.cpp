@@ -253,7 +253,7 @@ int main(int argc, char*argv[]) {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          cout << "Latency " << latency_in_s << endl;
+          cout << "Latency " << latency_in_s << " " << latency_in_ms << endl;
           this_thread::sleep_for(chrono::milliseconds(latency_in_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
