@@ -153,7 +153,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // calculate constants
   // Refactored to not use any hard coded constants.
   //
-  cout << "NNNNNNNNN " << N << endl;
+//  cout << "NNNNNNNNN " << N << endl;
 
   ulong const n_vars = (n_input_params*N)+n_actuators*(N-1);
   ulong const n_constraints = n_input_params*N;

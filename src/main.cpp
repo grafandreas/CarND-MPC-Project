@@ -120,12 +120,12 @@ int main(int argc, char*argv[]) {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+//    cout << sdata << endl;
     milliseconds ms = duration_cast< milliseconds >(
         system_clock::now().time_since_epoch()
     );
 
-    cout  << ms.count() << endl;
+//    cout  << ms.count() << endl;
 
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
@@ -171,8 +171,8 @@ int main(int argc, char*argv[]) {
           Eigen::Map<Eigen::VectorXd> waypoints_y_eig(ptry, 6);
 
           auto coeffs = polyfit(waypoints_x_eig, waypoints_y_eig, 3);
-          double cte = polyeval(coeffs, 0);  // px = 0, py = 0
-          double epsi = -atan(coeffs[1]);  // p
+          double cte = polyeval(coeffs, 0);
+          double epsi = -atan(coeffs[1]);
 
           Eigen::VectorXd state(6);
 #if 1
@@ -195,9 +195,9 @@ int main(int argc, char*argv[]) {
           steer_value = vars[0];
           throttle_value = vars[1];
 
-          cout << "STV " << steer_value << endl;
+//          cout << "STV " << steer_value << endl;
           steer_value = steer_value/deg2rad(max_steer_angle);
-             cout << "STV " << steer_value << endl;
+//             cout << "STV " << steer_value << endl;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
@@ -243,7 +243,7 @@ int main(int argc, char*argv[]) {
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << "-> " << msg << std::endl;
+//          std::cout << "-> " << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.
@@ -253,7 +253,7 @@ int main(int argc, char*argv[]) {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          cout << "Latency " << latency_in_s << " " << latency_in_ms << endl;
+//          cout << "Latency " << latency_in_s << " " << latency_in_ms << endl;
           this_thread::sleep_for(chrono::milliseconds(latency_in_ms));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
