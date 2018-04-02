@@ -197,6 +197,8 @@ int main(int argc, char*argv[]) {
 
 //          cout << "STV " << steer_value << endl;
           steer_value = steer_value/deg2rad(max_steer_angle);
+          if(steer_value > 1 || steer_value < -1)
+              cout << "STV out of bounds "  <<  steer_value << endl;
 //             cout << "STV " << steer_value << endl;
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.

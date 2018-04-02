@@ -12,7 +12,7 @@ using CppAD::AD;
 // and size_t is the sizeof an object, not an offset;
 //
 typedef unsigned long  ulong;
-ulong  N = 10;       // Initial experimental value
+ulong  N = 8;       // Initial experimental value
 double const  dt = 0.1;    // Initial experimental value
 
 const ulong x_offs = 0;
@@ -42,11 +42,11 @@ const ulong n_actuators = 2;
 //const int jerk_cost_weight = 10;
 
 const int cte_cost_weight = 2000;
-const int epsi_cost_weight = 2000;
+const int epsi_cost_weight = 5000;
 const int v_cost_weight = 1;
-const int delta_cost_weight = 5; // Inspired by Udacity video
-const int a_cost_weight = 5;
-const int delta_change_cost_weight = 100; // Was 200000
+const int delta_cost_weight = 2400; // Inspired by Udacity video
+const int a_cost_weight = 50;
+const int delta_change_cost_weight = 1200; // Was 200000
 const int jerk_cost_weight = 10;
 
 
@@ -73,7 +73,7 @@ class FG_eval {
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
-
+        fg[0]=0;
         // AGR check
       for (int i = 0; i < N; i++) {
         fg[0] += cte_cost_weight * CppAD::pow(vars[cte_offs + i], 2);  // Q&A has ref_cte
@@ -241,7 +241,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   options += "Sparse  true        reverse\n";
   // NOTE: Currently the solver has a maximum time limit of 0.5 seconds.
   // Change this as you see fit.
-  options += "Numeric max_cpu_time          0.5\n";
+//  options += "Numeric max_cpu_time          0.5\n";
   // AGR: Change CPU TIME!
 
   // place to return solution
