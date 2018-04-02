@@ -33,20 +33,13 @@ const ulong n_actuators = 2;
 
 
 // Weights for the cost calculation
-//const int cte_cost_weight = 2000;
-//const int epsi_cost_weight = 2000;
-//const int v_cost_weight = 1;
-//const int delta_cost_weight = 10;
-//const int a_cost_weight = 10;
-//const int delta_change_cost_weight = 100;
-//const int jerk_cost_weight = 10;
 
-const int cte_cost_weight = 2000;
-const int epsi_cost_weight = 5000;
+const int cte_cost_weight = 1;
+const int epsi_cost_weight = 1;
 const int v_cost_weight = 1;
-const int delta_cost_weight = 2400; // Inspired by Udacity video
-const int a_cost_weight = 50;
-const int delta_change_cost_weight = 600; // Was 200000
+const int delta_cost_weight = 5; // Inspired by Udacity video
+const int a_cost_weight = 5;
+const int delta_change_cost_weight = 1000; // Was 200000
 const int jerk_cost_weight = 10;
 
 
