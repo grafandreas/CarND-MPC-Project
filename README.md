@@ -5,7 +5,8 @@ Self-Driving Car Engineer Nanodegree Program - Rubric
 
 ## Compilations
 
-Code Compiles with the regular build tools
+Code Compiles with the regular build tools.
+Update: Code is built on Ubuntu WSL (Win10). Simulator is run on Win10 directly.
 
 ## Implementation
 
@@ -21,7 +22,7 @@ The equations and basic model is taken directly from the lessons. Noteworthy poi
  the project will probably result in an effective latency of >100ms. But as mentioned, with Windows/Linux, this cannot be
  made more precis
 
-### Update Explanation of state:
+### Update: Explanation of state:
 
 * The actuators are steering angle (from -1 to 1, representing -25 to 25 degrees) and throttle (-1 to 1). They are taken from the
 solver in main.cpp l.195/196. Since there is an assymetry in steering angle (simulator sends radians, but expects -1 to -1), it is
