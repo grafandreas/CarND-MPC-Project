@@ -46,7 +46,7 @@ const int epsi_cost_weight = 5000;
 const int v_cost_weight = 1;
 const int delta_cost_weight = 2400; // Inspired by Udacity video
 const int a_cost_weight = 50;
-const int delta_change_cost_weight = 1200; // Was 200000
+const int delta_change_cost_weight = 600; // Was 200000
 const int jerk_cost_weight = 10;
 
 
